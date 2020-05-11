@@ -1,0 +1,31 @@
+#!/bin/bash
+# See https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
+set -euo pipefail
+
+# Handler format: <script_name>.<bash_function_name>
+#
+# The script file <script_name>.sh  must be located at the root of your
+# function's deployment package, alongside this bootstrap executable.
+
+# Split filename and function name using '.'
+# 0 => File name, 1 => Func name
+IFS="." read -ra FN <<< "$_HANDLER"
+
+source $(dirname "$0")/"${FN[0]}.sh"
+
+LAMBDA_RUNTIME_BASE_URL="http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation"
+
+while true
+do
+    NEXT_RESPONSE=$(curl -v -sS -LD /dev/stdout -X GET "${LAMBDA_RUNTIME_BASE_URL}/next")
+    INVOCATION_ID=$(echo "$NEXT_RESPONSE" | sed -n -e 's/Lambda-Runtime-Aws-Request-Id: \([[:alnum:]-]\)/\1/p' | tr -d '\r')
+
+    # Remove HTTP headers
+    EVENT_DATA=$(echo "$NEXT_RESPONSE" | sed '1,/^\r\{0,1\}$/d')
+
+    # Execute the handler function from the script
+    RESPONSE=$( "${FN[1]}" "$EVENT_DATA")
+
+    # Send the response to Lambda runtime
+    curl -v -sS -X POST "${LAMBDA_RUNTIME_BASE_URL}/$INVOCATION_ID/response" -d "${RESPONSE}"
+done
