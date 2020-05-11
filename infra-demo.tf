@@ -1,7 +1,6 @@
 # Setup Providers
 provider "aws" {
-  region = "us-east-2"
-  profile = "teknocerdas-infra"
+  version = "~> 2.61"
 }
 
 variable "default_tags" {
