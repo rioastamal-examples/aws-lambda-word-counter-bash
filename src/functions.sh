@@ -23,7 +23,7 @@ function parse_json()
     # 2. Optional - filter the value by args
     #
     # Example
-    # Print all keys: echo '{"name": "Rio Astamal", "Age": 32}'
+    # Print all keys: echo '{"name": "Rio Astamal", "Age": 32}' | parse_json
     # Print name: echo '{"name": "Rio Astamal", "Age": 32}' | parse_json '["name"]'
     python3 -c "import sys, json; print(json.load(sys.stdin)$@)"
 }
